@@ -59,13 +59,13 @@ class Timer {
       client.client.say(channel, "This Timer does not exist");
     }
   }
-  
+
   stopall(client, channel) {
     this.timerMap.forEach(function(timer) {
       timer.stop();
-    })
+    });
   }
-  
+
   start(client, channel, params) {
     if (this.timerMap.get(params[1])) {
       this.timerMap.get(params[1]).start();
@@ -73,12 +73,72 @@ class Timer {
       this.client.say(channel, "This Timer does not exist");
     }
   }
-  
-  remove(client, channel, params){
+
+  remove(client, channel, params) {
     if (this.timerMap.get(params[1])) {
       this.timerMap.get(params[1]).remove();
       this.timerMap.delete(params[1]);
     }
   }
 }
+
+class Command {
+  constructor(client, channel, commandList) {
+    this.client = client;
+    this.commandList = commandList;
+    this.commandMap = new Map();
+    let _this = this;
+    this.Command = require("./objects/Command");
+    commandList.forEach(function(command) {
+      _this.commandMap.set(
+        command.commandName,
+        new _this.Command.Command(client, channel, command.commandName, command.response)
+      );
+    });
+  }
+
+  add(channel, params) {
+    let commandName = params[1];
+    params.shift();
+    params.shift();
+    var newCommand = this.client.aws.addCommand(
+      channel.slice(1),
+      commandName,
+      params.join(" ")
+    );
+    var _this = this;
+    newCommand.then(function() {
+      var nC = new _this.Command.Command(
+        _this.client,
+        channel.slice(1),
+        commandName,
+        params.join(" ")
+      );
+      _this.commandMap.set(commandName, nC);
+    });
+  }
+  
+  remove(channel, params) {
+    if (this.commandMap.get(params[1])) {
+      this.commandMap.get(params[1]).remove();
+      this.commandMap.delete(params[1])
+    }
+  }
+  
+  print(channel, command) {
+    if (this.commandMap.get(command)) {
+      this.commandMap.get(command).print();
+    }
+  }
+  
+  contains(channel, commandName){
+    if (this.commandMap.has(commandName)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
+
 exports.Timer = Timer;
+exports.Command = Command;

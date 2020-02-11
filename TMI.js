@@ -18,6 +18,8 @@ class TMI {
     this.client.on("message", this.onMessageHandler.bind(this));
 
     this.cTimerList = new Map();
+    this.cCommandList = new Map();
+    this.commandList = new Array();
 
     this.client.connect();
   }
@@ -53,6 +55,14 @@ class TMI {
       }
     } else if (command == "help") {
       this.client.say(channel, "NANANANANANANNANANANANA BATMAN");
+    } else if (command == "command" && allowed) {
+      if (params[0] == "add") {
+        this.cCommandList.get(channel).add(channel, params);
+      } else if (params[0] == "remove") {
+        this.cCommandList.get(channel).remove(channel, params);
+      }
+    } else if (this.cCommandList.get(channel).contains(channel, command)) {
+      this.cCommandList.get(channel).print(channel, command);
     }
   }
 
@@ -60,6 +70,7 @@ class TMI {
     if (self) {
       console.log("[TMI] Joined Channel " + channel);
       const timerList = this.aws.getTimer(channel.slice(1));
+      const commandList = this.aws.getCommands(channel.slice(1));
       var _this = this;
 
       timerList
@@ -70,6 +81,13 @@ class TMI {
         .catch(function(e) {
           console.log("[TMI] Timer - " + e);
         });
+      
+      commandList.then(function(value) {
+        var Commands = require("./commands/Commands");
+        _this.cCommandList.set(channel, new Commands.Command(_this, channel.slice(1), value));
+      }).catch(function(e) {
+        console.log("[TMI] Command - " + e);
+      })
     }
   }
 }
